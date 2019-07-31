@@ -8,7 +8,7 @@ require "json"
 
 def main
   # get started -- replace with your login
-  start = post_json('/riddlebot/start', { :login => 'riddlebot' })
+  start = post_json('/riddlebot/start', { :login => 'amber-king' })
 
   riddle_path = start['riddlePath']
 
@@ -22,8 +22,72 @@ def main
     puts next_riddle['message']
     puts
 
-    # TODO: YOUR CODE HERE
-    answer = ""
+    riddle_type = next_riddle['riddleType']
+    riddle_text = next_riddle['riddleText']
+    
+    # get riddle answer
+    if riddle_type == "reverse"
+      answer = riddle_text.reverse
+    elsif riddle_type == "rot13"
+      answer = ""
+      chars = riddle_text.split("")
+      chars.each do |c|
+        if c == " "
+          answer += c
+        elsif c.ord < 78
+          answer += (c.ord + 13).chr
+        else
+          answer += (c.ord - 13).chr
+        end
+      end
+    elsif riddle_type == "caesar"
+      answer = ""
+      if next_riddle.key?('riddleKey')
+        riddle_key = next_riddle['riddleKey']
+      else
+        words = riddle_text.split(" ")
+        words.each do |word|
+          if word.length == 1
+            riddle_key = word.ord - 65  # assume words with 1 letter are "a"
+          end
+        end
+      end
+      chars = riddle_text.split("")
+      chars.each do |c|
+        if c == " "
+          answer += c
+        else
+          new_c = (c.ord - riddle_key).chr
+          if new_c.ord < 65
+            new_c = (new_c.ord + 26).chr
+          end
+          answer += new_c
+        end
+      end
+    elsif riddle_type == "vigenere"
+      answer = ""
+      if next_riddle.key?('riddleKey')
+        riddle_key = next_riddle['riddleKey']
+      else
+        riddle_key = [0, 0, 0]
+      end
+      index = 0
+      chars = riddle_text.split("")
+      chars.each do |c|
+        if c == " "
+          answer += c
+        else
+          new_c = (c.ord - riddle_key[index % riddle_key.length]).chr
+          if new_c.ord < 65
+            new_c = (new_c.ord + 26).chr
+          end
+          answer += new_c
+          index += 1
+        end
+      end
+    else
+      answer = riddle_text
+    end
 
     # send to riddlebot api
     answer_result = send_answer(riddle_path, answer)
