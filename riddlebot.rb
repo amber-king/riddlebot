@@ -48,7 +48,7 @@ def main
         words = riddle_text.split(" ")
         words.each do |word|
           if word.length == 1
-            riddle_key = word.ord - 65  # assume words with 1 letter are "a"
+            riddle_key = word.ord - 65  # assume words with 1 letter are "A"
           end
         end
       end
@@ -69,7 +69,36 @@ def main
       if next_riddle.key?('riddleKey')
         riddle_key = next_riddle['riddleKey']
       else
-        riddle_key = [0, 0, 0]
+        offset_1_chars = []
+        offset_2_chars = []
+        offset_3_chars = []
+        offset_4_chars = []
+        i = 0
+        while i < riddle_text.length
+          if riddle_text[i] != " "
+            if i % 4 == 0
+              offset_1_chars.push(riddle_text[i])
+            elsif i % 4 == 1
+              offset_2_chars.push(riddle_text[i])
+            elsif i % 4 == 2
+              offset_3_chars.push(riddle_text[i])
+            else
+              offset_4_chars.push(riddle_text[i])
+            end
+          end
+          i += 1
+        end
+        offset_1 = mode(offset_1_chars).ord - 69
+        offset_2 = mode(offset_2_chars).ord - 69
+        offset_3 = mode(offset_3_chars).ord - 69
+        offset_4 = mode(offset_4_chars).ord - 69
+        riddle_key = [offset_1, offset_2, offset_3, offset_4]
+        puts offset_1_chars
+        puts offset_2_chars
+        puts offset_3_chars
+        puts offset_4_chars
+        puts "riddle key"
+        puts riddle_key
       end
       index = 0
       chars = riddle_text.split("")
@@ -86,7 +115,7 @@ def main
         end
       end
     else
-      answer = riddle_text
+      answer = ""
     end
 
     # send to riddlebot api
@@ -143,6 +172,11 @@ end
 
 def build_uri(path)
   URI.parse("https://api.noopschallenge.com" + path)
+end
+
+def mode(arr)
+  freq = arr.inject(Hash.new(0)) { |h,v| h[v] += 1; h }
+  return arr.max_by { |v| freq[v] }
 end
 
 main()
