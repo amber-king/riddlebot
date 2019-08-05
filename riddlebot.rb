@@ -5,6 +5,11 @@
 #
 require "net/http"
 require "json"
+require "open-uri"
+
+WORDS_FILE = open("https://raw.githubusercontent.com/first20hours/google-10000-english/master/google-10000-english.txt")
+WORDS_BY_FREQUENCY = WORDS_FILE.read.split("\n")
+CHARS_BY_FREQUENCY = "ETAOINSHRDLCUMWFGYPBVKJXQZ"
 
 def main
   # get started -- replace with your login
@@ -69,36 +74,19 @@ def main
       if next_riddle.key?('riddleKey')
         riddle_key = next_riddle['riddleKey']
       else
-        offset_1_chars = []
-        offset_2_chars = []
-        offset_3_chars = []
-        offset_4_chars = []
-        i = 0
+        i = 0  # char counter including spaces
+        j = 0  # char counter excluding spaces
+        chars_split = [[], [], [], []]
         while i < riddle_text.length
           if riddle_text[i] != " "
-            if i % 4 == 0
-              offset_1_chars.push(riddle_text[i])
-            elsif i % 4 == 1
-              offset_2_chars.push(riddle_text[i])
-            elsif i % 4 == 2
-              offset_3_chars.push(riddle_text[i])
-            else
-              offset_4_chars.push(riddle_text[i])
-            end
+            chars_split[j % 4].push(riddle_text[i])
+            j += 1
           end
           i += 1
         end
-        offset_1 = mode(offset_1_chars).ord - 69
-        offset_2 = mode(offset_2_chars).ord - 69
-        offset_3 = mode(offset_3_chars).ord - 69
-        offset_4 = mode(offset_4_chars).ord - 69
-        riddle_key = [offset_1, offset_2, offset_3, offset_4]
-        puts offset_1_chars
-        puts offset_2_chars
-        puts offset_3_chars
-        puts offset_4_chars
-        puts "riddle key"
-        puts riddle_key
+        test = "WEATHER FORECAST FOR THIS WEEK MONDAY THUNDERSTORM ICE PELLETS TUESDAY THUNDERSTORM SHOWERS IN VICINITY WEDNESDAY HEAVY SAND STORM THURSDAY HEAVY SNOW SHOWERS FOG FRIDAY HEAVY SHOWERS RAIN SUNDAY PARTLY CLOUDY AND WINDY NEXT WEEK FRIDAY THUNDERSTORM IN VICINITY SUNDAY HEAVY SNOW SHOWERS MONDAY LIGHT THUNDERSTORM RAIN HAIL HAZE TUESDAY HEAVY SHOWERS RAIN WEDNESDAY OVERCAST AND BREEZY THURSDAY HEAVY FREEZING DRIZZLE RAIN"
+        puts "is english? #{english?(test)}"
+        riddle_key = [0, 0, 0, 0]
       end
       index = 0
       chars = riddle_text.split("")
@@ -174,9 +162,30 @@ def build_uri(path)
   URI.parse("https://api.noopschallenge.com" + path)
 end
 
-def mode(arr)
-  freq = arr.inject(Hash.new(0)) { |h,v| h[v] += 1; h }
-  return arr.max_by { |v| freq[v] }
+# create hash for frequencies of array elements
+def frequencies(arr)
+  freq = Hash.new(0)
+  arr.each do |element|
+    freq[element] += 1
+  end
+  freq = freq.sort_by { |element, count| count }
+  freq.reverse!
+  return freq
+end
+
+# return true if >75% of words are English, false otherwise
+def english?(text)
+  num_english = 0
+  text_words = text.split(" ")
+  text_words.each do |text_word|
+    WORDS_BY_FREQUENCY.each do |dict_word|
+      if text_word == dict_word.upcase
+        num_english += 1
+        break
+      end
+    end
+  end
+  return num_english.to_f / text_words.length > 0.75
 end
 
 main()
