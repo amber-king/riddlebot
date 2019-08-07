@@ -9,7 +9,6 @@ require "open-uri"
 
 WORDS_FILE = open("https://raw.githubusercontent.com/first20hours/google-10000-english/master/google-10000-english.txt")  # credit to the google-10000-english repo
 WORDS_BY_FREQUENCY = WORDS_FILE.read.split("\n")
-CHARS_BY_FREQUENCY = "ETAOINSHRDLCUMWFGYPBVKJXQZ"
 
 def main
   # get started -- replace with your login
@@ -207,6 +206,7 @@ def get_vigenere_key(riddle)  # not the best method (only works sometimes)
     end
   end
 
+  puts "Key not found."
   return [0, 0, 0, 0]
 end
 
