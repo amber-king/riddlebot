@@ -7,7 +7,7 @@ require "net/http"
 require "json"
 require "open-uri"
 
-WORDS_FILE = open("https://raw.githubusercontent.com/first20hours/google-10000-english/master/google-10000-english.txt")
+WORDS_FILE = open("https://raw.githubusercontent.com/first20hours/google-10000-english/master/google-10000-english.txt")  # credit to the google-10000-english repo
 WORDS_BY_FREQUENCY = WORDS_FILE.read.split("\n")
 CHARS_BY_FREQUENCY = "ETAOINSHRDLCUMWFGYPBVKJXQZ"
 
