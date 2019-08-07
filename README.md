@@ -1,3 +1,5 @@
+[certificate!](https://api.noopschallenge.com/riddlebot/certificate/fvNLcczHjh7956942ZxhcM9PR7NZntE9IqdsIm8XBoY)
+
 ![riddlebot](https://user-images.githubusercontent.com/212941/60119479-6713fc00-9733-11e9-93c6-91a773fc0270.png)
 
 # 👋 Meet Riddlebot
