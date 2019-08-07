@@ -30,82 +30,27 @@ def main
     riddle_type = next_riddle['riddleType']
     riddle_text = next_riddle['riddleText']
     
-    # get riddle answer
     if riddle_type == "reverse"
-      answer = riddle_text.reverse
+      answer = solve_reverse(riddle_text)
     elsif riddle_type == "rot13"
-      answer = ""
-      chars = riddle_text.split("")
-      chars.each do |c|
-        if c == " "
-          answer += c
-        elsif c.ord < 78
-          answer += (c.ord + 13).chr
-        else
-          answer += (c.ord - 13).chr
-        end
-      end
+      answer = solve_rot13(riddle_text)
     elsif riddle_type == "caesar"
-      answer = ""
       if next_riddle.key?('riddleKey')
         riddle_key = next_riddle['riddleKey']
       else
-        words = riddle_text.split(" ")
-        words.each do |word|
-          if word.length == 1
-            riddle_key = word.ord - 65  # assume words with 1 letter are "A"
-          end
-        end
+        riddle_key = get_caesar_key(riddle_text)
       end
-      chars = riddle_text.split("")
-      chars.each do |c|
-        if c == " "
-          answer += c
-        else
-          new_c = (c.ord - riddle_key).chr
-          if new_c.ord < 65
-            new_c = (new_c.ord + 26).chr
-          end
-          answer += new_c
-        end
-      end
+      answer = solve_caesar(riddle_text, riddle_key)
     elsif riddle_type == "vigenere"
-      answer = ""
       if next_riddle.key?('riddleKey')
         riddle_key = next_riddle['riddleKey']
+        answer = solve_vigenere(riddle_text, riddle_key)
       else
-        i = 0  # char counter including spaces
-        j = 0  # char counter excluding spaces
-        chars_split = [[], [], [], []]
-        while i < riddle_text.length
-          if riddle_text[i] != " "
-            chars_split[j % 4].push(riddle_text[i])
-            j += 1
-          end
-          i += 1
-        end
-        test = "WEATHER FORECAST FOR THIS WEEK MONDAY THUNDERSTORM ICE PELLETS TUESDAY THUNDERSTORM SHOWERS IN VICINITY WEDNESDAY HEAVY SAND STORM THURSDAY HEAVY SNOW SHOWERS FOG FRIDAY HEAVY SHOWERS RAIN SUNDAY PARTLY CLOUDY AND WINDY NEXT WEEK FRIDAY THUNDERSTORM IN VICINITY SUNDAY HEAVY SNOW SHOWERS MONDAY LIGHT THUNDERSTORM RAIN HAIL HAZE TUESDAY HEAVY SHOWERS RAIN WEDNESDAY OVERCAST AND BREEZY THURSDAY HEAVY FREEZING DRIZZLE RAIN"
-        puts "is english? #{english?(test)}"
-        riddle_key = [0, 0, 0, 0]
+        riddle_key = get_vigenere_key(riddle_text.reverse)
+        answer = solve_vigenere(riddle_text.reverse, riddle_key)
       end
-      index = 0
-      chars = riddle_text.split("")
-      chars.each do |c|
-        if c == " "
-          answer += c
-        else
-          new_c = (c.ord - riddle_key[index % riddle_key.length]).chr
-          if new_c.ord < 65
-            new_c = (new_c.ord + 26).chr
-          end
-          answer += new_c
-          index += 1
-        end
-      end
-    else
-      answer = ""
     end
-
+    
     # send to riddlebot api
     answer_result = send_answer(riddle_path, answer)
 
@@ -113,6 +58,7 @@ def main
       puts 'All riddles answered correctly!'
       puts 'certificate:'
       puts answer_result['certificate']
+      exit 1
     elsif answer_result['result'] == 'correct'
       riddle_path = answer_result['nextRiddlePath']
       next_riddle = get_json(riddle_path)
@@ -162,14 +108,132 @@ def build_uri(path)
   URI.parse("https://api.noopschallenge.com" + path)
 end
 
-# create hash for frequencies of array elements
-def frequencies(arr)
-  freq = Hash.new(0)
-  arr.each do |element|
-    freq[element] += 1
+def solve_reverse(riddle)
+  return riddle.reverse
+end
+
+def solve_rot13(riddle)
+  answer = ""
+  chars = riddle.split("")
+  chars.each do |c|
+    if c == " "
+      answer += c
+    elsif c.ord < 78
+      answer += (c.ord + 13).chr
+    else
+      answer += (c.ord - 13).chr
+    end
   end
-  freq = freq.sort_by { |element, count| count }
+  return answer
+end
+
+def solve_caesar(riddle, key)
+  answer = ""
+  chars = riddle.split("")
+  chars.each do |c|
+    if c == " " || c == "-"
+      answer += c
+    else
+      new_c = (c.ord - key).chr
+      if new_c.ord < 65
+        new_c = (new_c.ord + 26).chr
+      end
+      answer += new_c
+    end
+  end
+  return answer
+end
+
+def get_caesar_key(riddle)
+  key = 0
+  words = riddle.split(" ")
+  words.each do |word|
+    if word.length == 1
+      key = word.ord - 65  # assume words with 1 letter are "A"
+    end
+  end
+  return key
+end
+
+def solve_vigenere(riddle, key)
+  answer = ""
+  index = 0
+  chars = riddle.split("")
+  chars.each do |c|
+    if c == " "
+      answer += c
+    else
+      new_c = (c.ord - key[index % key.length]).chr
+      if new_c.ord < 65
+        new_c = (new_c.ord + 26).chr
+      end
+      answer += new_c
+      index += 1
+    end
+  end
+  return answer
+end
+
+def get_vigenere_key(riddle)  # not the best method (only works sometimes)
+  chars_split = split_chars(riddle)
+    
+  freq_arr = []
+  for i in 0..3
+    freq_hash = frequencies(chars_split[i])
+    freq_arr.push(freq_hash)
+  end
+   
+  # get the possible keys from setting the 3 most frequent characters of each group to E (3^4 combinations)
+  possible_keys = []
+  for i in 0..3
+    offsets = []
+    for j in 0..2
+      new_e = freq_arr[i].keys[j]
+      offset = new_e.ord - 69
+      if offset < 0
+        offset += 26
+      end
+      offsets.push(offset)
+    end
+    possible_keys.push(offsets)
+  end
+  possible_keys = possible_keys.first.product(*possible_keys[1..-1]).map(&:flatten)
+  
+  # test each key
+  possible_keys.each do |key|
+    text = solve_vigenere(riddle, key)
+    if english?(text)
+      return key
+    end
+  end
+
+  return [0, 0, 0, 0]
+end
+
+# create arrays grouping the characters of the different offsets
+def split_chars(riddle)
+  i = 0  # char counter including spaces
+  j = 0  # char counter excluding spaces
+  chars_split = [[], [], [], []]
+  while i < riddle.length
+    if riddle[i] != " "
+      chars_split[j % 4].push(riddle[i])
+      j += 1
+    end
+    i += 1
+  end
+  return chars_split
+end
+
+# create hash for frequencies of char array elements
+def frequencies(chars)
+  freq = Hash.new(0)
+  chars.each do |char|
+    freq[char] += 1
+  end
+  freq = freq.sort_by { |char, count| count }  # order by highest frequency
   freq.reverse!
+  freq = Hash[freq]
   return freq
 end
 
