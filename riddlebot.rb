@@ -12,7 +12,7 @@ WORDS_BY_FREQUENCY = WORDS_FILE.read.split("\n")
 
 def main
   # get started -- replace with your login
-  start = post_json('/riddlebot/start', { :login => 'amber-king' })
+  start = post_json('/riddlebot/start', { :login => 'ffbf00' })
 
   riddle_path = start['riddlePath']
 
